@@ -12,7 +12,7 @@ export default function Home() {
     })
 
     const data = await res.json()
-    console.log("Backend response:", data)
+    console.log("Backend response:", data.parsedText)
   }
 
   return (
