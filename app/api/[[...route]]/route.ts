@@ -4,6 +4,8 @@ import { promises as fs } from "fs"
 import path from "path"
 import { v4 as uuidv4 } from "uuid"
 import PDFParser from "pdf2json"
+import resumeAnalyzerAgent from "../mastra/agents/resumeAnalyzerAgent"
+import analyzeResumeTool from "../mastra/tools/analyzeResumeTool"
 
 const app = new Hono().basePath("/api")
 
@@ -53,6 +55,31 @@ app.post("/analyze", async (c) => {
     return c.json({ error: "Failed to parse PDF", details: err?.message || String(err) }, 500)
   }
 })
+
+app.post("/mastra", async (c) => {
+  try {
+    const { parsedText } = await c.req.json()
+
+    if (!parsedText) {
+      return c.json({ error: "parsedText is required" }, 400)
+    }
+
+    // Call the tool directly
+    const result = await analyzeResumeTool.execute!({
+      context: { resumeText: parsedText },
+      runtimeContext:{}
+    }as any)
+
+    return c.json({ analysis: result })
+  } catch (err: any) {
+    console.error("Mastra tool error:", err)
+    return c.json(
+      { error: "Failed to analyze resume", details: err?.message || String(err) },
+      500
+    )
+  }
+})
+
 
 export const GET = handle(app)
 export const POST = handle(app)
