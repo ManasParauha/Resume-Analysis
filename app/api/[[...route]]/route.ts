@@ -7,6 +7,7 @@ import path from "path"
 import { v4 as uuidv4 } from "uuid"
 import PDFParser from "pdf2json"
 import { runResumeAnalysis } from "../mastra/agents/resumeAnalyzerAgent"
+import os from 'os'; 
 
 const app = new Hono().basePath("/api")
 
@@ -32,7 +33,7 @@ app.post("/analyze", async (c) => {
     const fileName = uuidv4()
 
     // Use project-local tmp folder
-    const tempDir = path.join(process.cwd(), "tmp")
+   const tempDir = path.join(os.tmpdir(), "resume-analysis-tmp");
     await fs.mkdir(tempDir, { recursive: true }) // create folder if not exists
 
     // Assign to the external variable
