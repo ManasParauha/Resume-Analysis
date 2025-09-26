@@ -42,7 +42,14 @@ app.post("/analyze", async (c) => {
     // Parse PDF
     const pdfParser = new (PDFParser as any)(null, 1)
     const parsedText: string = await new Promise((resolve, reject) => {
-      pdfParser.on("pdfParser_dataError", (err: any) => reject(err.parserError))
+      pdfParser.on("pdfParser_dataError", (err: unknown) => { // Line 45: Error
+        if (typeof err === 'object' && err !== null && 'parserError' in err) {
+            reject((err as { parserError: string }).parserError);
+        } else {
+            reject(new Error("PDF Parser data error"));
+        }
+    });
+       // @ts-ignore
       pdfParser.on("pdfParser_dataReady", () => {
         const text = pdfParser.getRawTextContent()
         resolve(text)

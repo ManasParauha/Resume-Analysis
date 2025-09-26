@@ -56,7 +56,7 @@ export default function Home() {
             
            toast.success(" Analysis Complete!")
 
-        } catch (err: any) {
+        } catch (err: unknown) {
              console.error("File upload or analysis failed:", err)
              toast.error("Analysis Failed")
         } finally {

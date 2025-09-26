@@ -1,6 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Accordion,
   AccordionContent,
@@ -8,7 +7,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 
-import { ResumeAnalysis } from "@/Types/ResumeAnalysis" //  Import the correct type
+import { ResumeAnalysis , ExperienceItem, EducationItem } from "@/Types/ResumeAnalysis" //  Import the correct type
 
 interface ResumeAnalysisProps {
   analysis: ResumeAnalysis; // Updated to use the full structured type
@@ -18,7 +17,7 @@ interface ResumeAnalysisProps {
 const formatKey = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
 // --- Sub-Component for Rendering Detail Items (Experience, Education) ---
-const DetailItem = ({ item }: { item: Record<string, any> }) => (
+const DetailItem = ({ item }: { item: ExperienceItem | EducationItem }) => (
     <div className="space-y-1 p-3 border-l-2 border-primary/50 hover:bg-gray-50 transition-colors">
         {Object.entries(item).map(([key, value]) => {
             if (!value || (Array.isArray(value) && value.length === 0)) return null;
