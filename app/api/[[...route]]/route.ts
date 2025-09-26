@@ -44,7 +44,7 @@ app.post("/analyze", async (c) => {
 
     // Parse PDF
     // 🛑 FIX: Use the specific (PDFParser as any) cast directly without the broken @ts-expect-error comment
-    // @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfParser = new (PDFParser as any)(null, 1)
 
     const parsedText: string = await new Promise((resolve, reject) => {
