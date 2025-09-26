@@ -4,16 +4,15 @@ import { promises as fs } from "fs"
 import path from "path"
 import { v4 as uuidv4 } from "uuid"
 import PDFParser from "pdf2json"
-import resumeAnalyzerAgent from "../mastra/agents/resumeAnalyzerAgent"
-import analyzeResumeTool from "../mastra/tools/analyzeResumeTool"
+import { runResumeAnalysis } from "../mastra/agents/resumeAnalyzerAgent"
 
 const app = new Hono().basePath("/api")
 
-// Health check
-app.get("/ping", (c) => c.text("pong"))
-
 // PDF analysis route
 app.post("/analyze", async (c) => {
+  // Define tempFilePath outside of the try block so it's accessible in the finally block
+  let tempFilePath: string | null = null;
+
   try {
     const formData = await c.req.formData()
     const file = formData.get("file") as File | null
@@ -32,7 +31,9 @@ app.post("/analyze", async (c) => {
     // Use project-local tmp folder
     const tempDir = path.join(process.cwd(), "tmp")
     await fs.mkdir(tempDir, { recursive: true }) // create folder if not exists
-    const tempFilePath = path.join(tempDir, `${fileName}.pdf`)
+
+    // 🛑 Assign to the external variable
+    tempFilePath = path.join(tempDir, `${fileName}.pdf`)
 
     // Convert ArrayBuffer -> Buffer
     const fileBuffer = Buffer.from(await file.arrayBuffer())
@@ -53,9 +54,26 @@ app.post("/analyze", async (c) => {
   } catch (err: any) {
     console.error("Error parsing PDF:", err)
     return c.json({ error: "Failed to parse PDF", details: err?.message || String(err) }, 500)
+  } finally {
+    //  STEP: Ensure the file is deleted
+    if (tempFilePath) {
+      try {
+        // Check if the file exists before attempting to delete it
+        await fs.unlink(tempFilePath)
+        console.log(`Successfully deleted temporary file: ${tempFilePath}`)
+      } catch (unlinkError: any) {
+        // Log the error but do not rethrow, as the main logic succeeded or was already handled.
+        // This prevents deletion errors from masking the original error.
+        if (unlinkError.code === 'ENOENT') {
+          // File already deleted or never created (e.g., upload failed early), which is fine.
+          console.warn(`Attempted to delete file, but it did not exist: ${tempFilePath}`);
+        } else {
+          console.error("Failed to delete temporary file:", unlinkError)
+        }
+      }
+    }
   }
 })
-
 app.post("/mastra", async (c) => {
   try {
     const { parsedText } = await c.req.json()
@@ -65,10 +83,7 @@ app.post("/mastra", async (c) => {
     }
 
     // Call the tool directly
-    const result = await analyzeResumeTool.execute!({
-      context: { resumeText: parsedText },
-      runtimeContext:{}
-    }as any)
+    const result = await runResumeAnalysis(parsedText)
 
     return c.json({ analysis: result })
   } catch (err: any) {
